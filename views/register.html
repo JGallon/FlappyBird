@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Register</title>
+    <link href="/stylesheets/login.css" rel="stylesheet">
+    <link rel="stylesheet" href="/javascripts/bootstrap/css/bootstrap.min.css">
+    <script src="/javascripts/bootstrap/js/jquery-3.2.1.min.js"></script>
+    <script src="/javascripts/bootstrap/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <form class="form-signin">
+        <h2 class="form-signin-heading">Please register</h2>
+        <input type="text" id="inputUsername" class="form-control" placeholder="Username">
+        <input type="password" id="inputPassword" class="form-control" placeholder="Password">
+        <input type="password" id="againPassword" class="form-control" placeholder="Password Again">
+        <button class="btn btn-lg btn-primary btn-block" id="register" type="button">Register</button>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var username = $("#inputUsername");
+        var password = $("#inputPassword");
+        var password1 = $("#againPassword");
+        var register = $("#register");
+        register.click(function () {
+            if (username.val() == "" || password.val() == "" || password1.val() == "") {
+                alert("注册信息不能为空！");
+            } else if (password.val() !== password1.val()) {
+                alert("两次输入的密码不一样！");
+            } else {
+                //访问服务器，将注册信息写入数据库
+                $.ajax({
+                    url: "/register/userRegister",
+                    data: {
+                        username: username.val(),
+                        password: password.val()
+                    },
+                    type: "POST",
+                    timeout: 36000,
+                    dataType: "text",
+                    success: function (data, textStatus) {
+                        var dataJson = eval("(" + data + ")");
+                        if (dataJson.code == 200) {
+                            alert("注册成功");
+                            window.location.href = "/login";
+                        } else if (dataJson.code == 300) {
+                            alert("该账号已存在！");
+                        } else if (dataJson.code == 400) {
+                            alert("注册失败，请重新注册！");
+                        } else {
+                            alert("注册出错！");
+                        }
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        alert("error:" + textStatus);
+                    }
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

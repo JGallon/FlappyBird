@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login</title>
+    <link href="/stylesheets/login.css" rel="stylesheet">
+    <link rel="stylesheet" href="/javascripts/bootstrap/css/bootstrap.min.css">
+    <script src="/javascripts/bootstrap/js/jquery-3.2.1.min.js"></script>
+    <script src="/javascripts/bootstrap/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+<div class="container">
+    <form class="form-signin">
+        <h2 class="form-signin-heading">Please login</h2>
+        <input type="text" id="inputUsername" class="form-control"
+               placeholder="Username">
+        <input
+                type="password" id="inputPassword" class="form-control"
+                placeholder="Password">
+        <button class="btn btn-lg btn-primary btn-block" type="button" id="login">Login</button>
+    </form>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var username = $("#inputUsername");
+        var password = $("#inputPassword");
+        var login = $("#login");
+        login.click(function () {
+            if (username.val() == "" || password.val() == "") {
+                alert("账号或密码不能为空！");
+            } else {
+                $.ajax({
+                        url: "/login/userLogin",
+                        data: {
+                            username: username.val(),
+                            password: password.val()
+                        },
+                        type: "POST",
+                        timeout: 36000,
+                        dataType: "text",
+                        success: function (data, textStatus) {
+                            //alert(data);
+                            var dataJson = eval("(" + data + ")");
+                            if (dataJson.code == 200) {
+                                alert("登录成功");
+                                window.location.href = "/game";
+                            } else if (dataJson.code == 300) {
+                                alert("账号不存在，请重新输入！");
+                            } else if (dataJson.code == 400) {
+                                alert("密码有误，请重新输入！");
+                            } else {
+                                alert("登录出错！");
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            alert("error:" + textStatus);
+                        }
+                    }
+                );
+            }
+        });
+    });
+</script>
+</body>
+</html>

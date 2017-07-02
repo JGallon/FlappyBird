@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Flappy Bird</title>
+    <link rel="stylesheet" href="/stylesheets/test.css">
+    <link rel="stylesheet" href="/javascripts/bootstrap/css/bootstrap.min.css">
+    <script src="/javascripts/bootstrap/js/jquery-3.2.1.min.js"></script>
+    <script src="/javascripts/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/javascripts/control/seekbar.js"></script>
+    <link rel="stylesheet" href="/stylesheets/seekbar.css">
+    <link rel="stylesheet" href="/stylesheets/game.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+    </script>
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top" id="nav">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand">User Interface</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/login/logout">Log out</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<!--<canvas id="demo" width="500" height="512"></canvas>-->
+<canvas id="play" width="500" height="512"></canvas>
+<!--<canvas id="learn" width="500" height="512"></canvas>-->
+<script src="/javascripts/vue/vue.js"></script>
+<script src="/javascripts/control/bird.js"></script>
+<script src="/javascripts/control/pipe.js"></script>
+<script src="/javascripts/control/Neuroevolution.js"></script>
+<script src="/javascripts/control/learning.js"></script>
+<script src="/javascripts/control/play.js"></script>
+
+<script>
+    //    var uflag = 0;
+    $(document).ready(function () {
+//        if (uflag == 0) {
+//            $.ajax({
+//                url: "/datas/getUsername",
+//                data: {},
+//                type: "POST",
+//                timeout: 36000,
+//                dataType: "text",
+//                success: function (data, textStatus) {
+//                    //alert(data);
+//                    var dataJson = eval("(" + data + ")");
+//                    alert(dataJson.username);
+//                },
+//                error: function (XMLHttpRequest, textStatus, errorThrown) {
+//                    alert("error:" + textStatus);
+//                }
+//            });
+//            uflag = 1;
+//        }
+        needData();
+    });
+    $(function () {
+        socket.on('letsreload', function () {
+//            console.log('sever need me to update');
+//            alert('sever need me to update');
+            needData();
+        });
+    });
+</script>
+
+<!-- component template -->
+<script type="text/x-template" id="grid-template">
+    <table id="scoretable">
+        <thead>
+        <tr>
+            <th v-for="key in columns"
+                @click="sortBy(key)"
+                :class="{ active: sortKey == key }">
+                {{ key | capitalize }}
+                <span class="arrow" :class="sortOrders[key] > 0 ? 'asc' : 'dsc'">
+          </span>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="entry in filteredData">
+            <td v-for="key in columns">
+                {{entry[key]}}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</script>
+
+<!-- demo root element -->
+<div id="demo">
+    <form id="search">
+        Search <input name="query" v-model="searchQuery">
+    </form>
+    <demo-grid
+            :data="gridData"
+            :columns="gridColumns"
+            :filter-key="searchQuery">
+    </demo-grid>
+</div>
+
+<script>
+    // register the grid component
+    Vue.component('demo-grid', {
+        template: '#grid-template',
+        props: {
+            data: Array,
+            columns: Array,
+            filterKey: String
+        },
+        data: function () {
+            var sortOrders = {}
+            this.columns.forEach(function (key) {
+                sortOrders[key] = 1
+            })
+            return {
+                sortKey: '',
+                sortOrders: sortOrders
+            }
+        },
+        computed: {
+            filteredData: function () {
+                var sortKey = this.sortKey
+                var filterKey = this.filterKey && this.filterKey.toLowerCase()
+                var order = this.sortOrders[sortKey] || 1
+                var data = this.data
+                if (filterKey) {
+                    data = data.filter(function (row) {
+                        return Object.keys(row).some(function (key) {
+                            return String(row[key]).toLowerCase().indexOf(filterKey) > -1
+                        })
+                    })
+                }
+                if (sortKey) {
+                    data = data.slice().sort(function (a, b) {
+                        a = a[sortKey]
+                        b = b[sortKey]
+                        return (a === b ? 0 : a > b ? 1 : -1) * order
+                    })
+                }
+                return data
+            }
+        },
+        filters: {
+            capitalize: function (str) {
+                return str.charAt(0).toUpperCase() + str.slice(1)
+            }
+        },
+        methods: {
+            sortBy: function (key) {
+                this.sortKey = key
+                this.sortOrders[key] = this.sortOrders[key] * -1
+            }
+//            updateArray: function (array) {
+//                this.data = array
+//                this.$nextTick(function () {
+//
+//                })
+//            }
+        }
+    });
+
+    //    var array = new Array();
+    //    for (var i = 0; i < 4; i++) {
+    //        var t = {name: "name" + i, score: i};
+    //        array.push(t);
+    //    }
+
+    // bootstrap the demo
+    var demo = new Vue({
+        el: '#demo',
+        data: {
+            searchQuery: '',
+            gridColumns: ['name', 'score', 'time'],
+            gridData: [
+                {name: 'Chuck Norris', score: Infinity},
+                {name: 'Bruce Lee', score: 9000},
+                {name: 'Jackie Chan', score: 7000},
+                {name: 'Jet Li', score: 8000}
+            ]
+        }
+    })
+    function updateVue(array) {
+//        demo.updateArray(array);
+        demo.gridData = array;
+        demo.$nextTick(function () {
+        });
+    }
+
+    function needData() {
+        var array = new Array();
+        $.ajax({
+            url: "/datas/loadScore",
+            data: {},
+            type: "POST",
+            timeout: 36000,
+            dataType: "text",
+            success: function (data, textStatus) {
+                var dataJson = eval("(" + data + ")");
+                console.log(dataJson);
+//                if (dataJson.code == 200) {
+//                    alert("添加成功");
+//                    window.location.href = "/login";
+//                } else {
+//                    alert("添加失败" + dataJson.msg);
+//                }
+                for (var i = 0; i < dataJson.list.length; i++)
+                    array.push(dataJson.list[i]);
+                console.log(array);
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                alert("error:" + textStatus);
+            }
+        });
+        updateVue(array);
+    }
+</script>
+<div id="seekbar-container-vertical-red"
+     style="width:40px;height:512px;float:left"></div>
+<script>
+    var redSlider = new Seekbar.Seekbar({
+        renderTo: "#seekbar-container-vertical-red",
+        minValue: 60, maxValue: 140,
+        valueListener: function (value) {
+            this.value = Math.round(value);
+            speed(this.value);
+//            alert(this.value);
+            updateColorPreview();
+        },
+        thumbColor: '#BBff0000',
+        negativeColor: '#ff0000',
+        positiveColor: '#CCC',
+        value: 60
+    });
+</script>
+<!--<br/>-->
+<!--<button onclick="speed(60)">x1</button>-->
+<!--<button onclick="speed(120)">x2</button>-->
+<!--<button onclick="speed(180)">x3</button>-->
+<!--<button onclick="speed(300)">x5</button>-->
+<!--<button onclick="needData()">lalala</button>-->
+<!--<br/>-->
+</body>
+</html>

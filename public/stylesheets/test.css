@@ -1,0 +1,23 @@
+#play {
+    position: absolute;
+    left: 600px;
+    top: 100px;
+}
+
+#scoretable {
+    position: absolute;
+    left: 100px;
+    top: 140px;
+}
+
+#seekbar-container-vertical-red {
+    position: absolute;
+    left: 1200px;
+    top: 100px;
+}
+
+#search {
+    position: absolute;
+    left: 100px;
+    top: 100px;
+}
